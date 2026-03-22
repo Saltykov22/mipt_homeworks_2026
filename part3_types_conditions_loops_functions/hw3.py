@@ -21,6 +21,7 @@ INCOME_NUMBER_OF_ARGUMENTS = 3
 COSTS_NUMBER_OF_ARGUMENTS = 4
 STATS_NUMBER_OF_ARGUMENTS = 2
 CONST_CATEGORY_NUMBER_OF_ARGUMENTS = 2
+DEPTH_OF_CATEGORIES = 2
 
 
 EXPENSE_CATEGORIES = {
@@ -32,7 +33,7 @@ EXPENSE_CATEGORIES = {
     "Clothing": ("Outerwear", "Casual", "Shoes", "Accessories"),
     "Education": ("Courses", "Books", "Tutors"),
     "Communications": ("Mobile", "Internet", "Subscriptions"),
-    "Other": (),
+    "Other": ("Something"),
 }
 
 table = {
@@ -46,10 +47,16 @@ financial_transactions_storage: list[dict[str, Any]] = []
 leap_ct = [4, 100, 400]
 
 
+def print_exp() -> None:
+    for category, values in EXPENSE_CATEGORIES.items():
+        for value in values:
+            print(f"{category}: {value}")
+
+
 def is_float(maybe_float: str) -> bool:
     if maybe_float.startswith(("+", "-")):
         maybe_float = maybe_float[1:]
-    maybe_float = maybe_float.replace(".", ",", 1)
+    maybe_float = maybe_float.replace(",", ".", 1)
     maybe_float = maybe_float.replace(".", "", 1)
     return maybe_float.isdigit()
 
@@ -119,8 +126,8 @@ def cost_handler(category_name: str, amount: float, income_date: str) -> str:
     return OP_SUCCESS_MSG
 
 
-def cost_categories_handler() -> str:
-    return str(EXPENSE_CATEGORIES)
+def cost_categories_handler() -> None:
+    print_exp()
 
 
 def output_stats_header(stats_date: str, capital: float, earnings: float, expenses: float) -> str:
@@ -252,25 +259,20 @@ def handle_income(elements: list[str]) -> None:
 
 def correct_category(category: str) -> bool:
     levels = list(category.split("::"))
-    match len(levels):
-        case 1:
-            return levels[0] == "Other"
-        case 2:
-            return levels[0] in EXPENSE_CATEGORIES and levels[1] in EXPENSE_CATEGORIES[levels[0]]
-        case _:
-            return False
+    if (len(levels) == DEPTH_OF_CATEGORIES):
+        return levels[0] in EXPENSE_CATEGORIES and levels[1] in EXPENSE_CATEGORIES[levels[0]]
     return False
 
 
 def handle_cost(elements: list[str]) -> None:
     if (len(elements) == CONST_CATEGORY_NUMBER_OF_ARGUMENTS and elements[1] == "categories"):
-        print(cost_categories_handler())
+        cost_categories_handler()
         return
     if (not valid_args_cost(elements)):
         return
     if (not correct_category(elements[1])):
         print(NOT_EXISTS_CATEGORY)
-        print(EXPENSE_CATEGORIES)
+        print_exp()
         return
     amount = normalize_amount(elements[2])
     print(cost_handler(elements[1], amount, elements[3]))
