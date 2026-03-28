@@ -16,9 +16,7 @@ class DictStorage(Storage[K, V]):
         self._data[key] = value
 
     def get(self, key: K) -> V | None:
-        if key in self._data:
-            return self._data[key]
-        return None
+        return self._data.get(key, None)
 
     def exists(self, key: K) -> bool:
         return key in self._data
@@ -87,10 +85,7 @@ class LFUPolicy(Policy[K]):
     _key_counter: dict[K, int] = field(default_factory=dict, init=False)
 
     def register_access(self, key: K) -> None:
-        if key in self._key_counter:
-            self._key_counter[key] += 1
-            return
-        self._key_counter[key] = 1
+        self._key_counter[key] = self._key_counter.get(key, 0) + 1
 
     def get_key_to_evict(self) -> K | None:
         if len(self._key_counter) > self.capacity:
