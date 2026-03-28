@@ -81,7 +81,7 @@ class LRUPolicy(Policy[K]):
 
 @dataclass
 class LFUPolicy(Policy[K]):
-    last_new_key: int = -1
+    last_new_key: K
     capacity: int = 5
     _key_counter: dict[K, int] = field(default_factory=dict, init=False)
 
