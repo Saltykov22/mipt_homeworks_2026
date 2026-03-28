@@ -16,7 +16,7 @@ class DictStorage(Storage[K, V]):
         self._data[key] = value
 
     def get(self, key: K) -> V | None:
-        if (key in self._data):
+        if key in self._data:
             return self._data[key]
         return None
 
@@ -36,11 +36,11 @@ class FIFOPolicy(Policy[K]):
     _order: list[K] = field(default_factory=list, init=False)
 
     def register_access(self, key: K) -> None:
-        if (key not in self._order):
+        if key not in self._order:
             self._order.append(key)
 
     def get_key_to_evict(self) -> K | None:
-        if (len(self._order) > self.capacity):
+        if len(self._order) > self.capacity:
             return self._order[0]
         return None
 
@@ -61,12 +61,12 @@ class LRUPolicy(Policy[K]):
     _order: list[K] = field(default_factory=list, init=False)
 
     def register_access(self, key: K) -> None:
-        if (key in self._order):
+        if key in self._order:
             self._order.remove(key)
         self._order.append(key)
 
     def get_key_to_evict(self) -> K | None:
-        if (len(self._order) > self.capacity):
+        if len(self._order) > self.capacity:
             return self._order[0]
         return None
 
@@ -87,13 +87,13 @@ class LFUPolicy(Policy[K]):
     _key_counter: dict[K, int] = field(default_factory=dict, init=False)
 
     def register_access(self, key: K) -> None:
-        if (key in self._key_counter):
+        if key in self._key_counter:
             self._key_counter[key] += 1
             return
         self._key_counter[key] = 1
 
     def get_key_to_evict(self) -> K | None:
-        if (len(self._key_counter) > self.capacity):
+        if len(self._key_counter) > self.capacity:
             return min(self._key_counter, key=lambda k: self._key_counter[k])
         return None
 
@@ -117,13 +117,13 @@ class MIPTCache(Cache[K, V]):
         self.policy.register_access(key)
         result = self.policy.get_key_to_evict()
 
-        if (result is not None):
+        if result is not None:
             self.policy.remove_key(result)
             self.storage.remove(result)
         self.storage.set(key, value)
 
     def get(self, key: K) -> V | None:
-        if (self.storage.exists(key)):
+        if self.storage.exists(key):
             self.policy.register_access(key)
         return self.storage.get(key)
 
@@ -131,7 +131,7 @@ class MIPTCache(Cache[K, V]):
         return self.storage.exists(key)
 
     def remove(self, key: K) -> None:
-        if (self.storage.exists(key)):
+        if self.storage.exists(key):
             self.policy.remove_key(key)
             self.storage.remove(key)
 
@@ -148,7 +148,7 @@ class CachedProperty[V]:
     def __get__(self, instance: HasCache[Any, Any] | None, owner: type) -> V | None:
         if instance is None:
             return None
-        if (instance.cache.exists(self.name)):
+        if instance.cache.exists(self.name):
             return instance.cache.get(self.name)
         value = self.func(instance)
         instance.cache.set(self.name, value)
