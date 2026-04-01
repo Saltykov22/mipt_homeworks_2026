@@ -77,6 +77,11 @@ financial_transactions_storage: list[dict[str, Any]] = []
 leap_ct = [4, 100, 400]
 
 
+def store_invalid_transaction(message: str) -> str:
+    financial_transactions_storage.append({})
+    return message
+
+
 def categories_info() -> str:
     answer: list[str] = []
     for category, values in EXPENSE_CATEGORIES.items():
@@ -165,6 +170,10 @@ def cost_handler(category_name: str, amount: float, income_date: str) -> str:
     )
 
     return OP_SUCCESS_MSG
+
+
+def cost_categories_handler() -> str:
+    return categories_info()
 
 
 def output_stats_header(
@@ -321,7 +330,7 @@ def handle_cost(elements: list[str]) -> None:
         len(elements) == CONST_CATEGORY_NUMBER_OF_ARGUMENTS
         and elements[1] == "categories"
     ):
-        print(categories_info())
+        print(cost_categories_handler())
         return
     if not valid_args_cost(elements):
         return
