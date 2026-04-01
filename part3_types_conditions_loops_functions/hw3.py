@@ -77,20 +77,11 @@ financial_transactions_storage: list[dict[str, Any]] = []
 leap_ct = [4, 100, 400]
 
 
-def store_invalid_transaction(message: str) -> str:
-    financial_transactions_storage.append({})
-    return message
-
-
 def categories_info() -> str:
     answer: list[str] = []
     for category, values in EXPENSE_CATEGORIES.items():
         answer.extend(f"{category}::{value}" for value in values)
     return "\n".join(answer)
-
-
-def print_exp() -> None:
-    print(categories_info())
 
 
 def is_float(maybe_float: str) -> bool:
@@ -120,7 +111,7 @@ def is_date_correct(day: int, month: int, year: int) -> bool:
 
 
 def are_letters_correct(d_m_y: list[str]) -> bool:
-    return all(x.lstrip("+-").isdigit() for x in d_m_y)
+    return all(x.lstrip("+").isdigit() for x in d_m_y)
 
 
 def extract_date(maybe_dt: str) -> DateTuple | None:
@@ -142,10 +133,12 @@ def income_handler(amount: float, income_date: str) -> str:
     d_m_y = extract_date(income_date)
 
     if amount <= 0:
-        return store_invalid_transaction(NONPOSITIVE_VALUE_MSG)
+        financial_transactions_storage.append({})
+        return NONPOSITIVE_VALUE_MSG
 
     if d_m_y is None:
-        return store_invalid_transaction(INCORRECT_DATE_MSG)
+        financial_transactions_storage.append({})
+        return INCORRECT_DATE_MSG
 
     financial_transactions_storage.append({AMOUNT: amount, DATE: d_m_y})
 
@@ -156,24 +149,27 @@ def cost_handler(category_name: str, amount: float, income_date: str) -> str:
     d_m_y = extract_date(income_date)
 
     if not correct_category(category_name):
-        return store_invalid_transaction(NOT_EXISTS_CATEGORY)
+        financial_transactions_storage.append({})
+        return NOT_EXISTS_CATEGORY
 
     if amount <= 0:
-        return store_invalid_transaction(NONPOSITIVE_VALUE_MSG)
+        financial_transactions_storage.append({})
+        return NONPOSITIVE_VALUE_MSG
 
     if d_m_y is None:
-        return store_invalid_transaction(INCORRECT_DATE_MSG)
+        financial_transactions_storage.append({})
+        return INCORRECT_DATE_MSG
 
-    financial_transactions_storage.append({CATEGORY: category_name, AMOUNT: amount, DATE: d_m_y})
+    financial_transactions_storage.append(
+        {CATEGORY: category_name, AMOUNT: amount, DATE: d_m_y}
+    )
 
     return OP_SUCCESS_MSG
 
 
-def cost_categories_handler() -> str:
-    return categories_info()
-
-
-def output_stats_header(stats_date: str, capital: float, earnings: float, expenses: float) -> str:
+def output_stats_header(
+    stats_date: str, capital: float, earnings: float, expenses: float
+) -> str:
     phrase = "loss"
     difference = expenses - earnings
     if earnings >= expenses:
@@ -265,7 +261,7 @@ def stats_handler(report_date: str) -> str:
 
     if d_m_y is None:
         return INCORRECT_DATE_MSG
-    (fin_header, fin_detal) = calc_finances(d_m_y)
+    fin_header, fin_detal = calc_finances(d_m_y)
     header = output_stats_header(report_date, *fin_header)
     detalisation = output_stats_detalisation(fin_detal)
     return f"{header}{detalisation}"
@@ -321,14 +317,17 @@ def correct_category(category: str) -> bool:
 
 
 def handle_cost(elements: list[str]) -> None:
-    if len(elements) == CONST_CATEGORY_NUMBER_OF_ARGUMENTS and elements[1] == "categories":
-        print(cost_categories_handler())
+    if (
+        len(elements) == CONST_CATEGORY_NUMBER_OF_ARGUMENTS
+        and elements[1] == "categories"
+    ):
+        print(categories_info())
         return
     if not valid_args_cost(elements):
         return
     if not correct_category(elements[1]):
         print(NOT_EXISTS_CATEGORY)
-        print_exp()
+        print(categories_info())
         return
     amount = normalize_amount(elements[2])
     print(cost_handler(elements[1], amount, elements[3]))
