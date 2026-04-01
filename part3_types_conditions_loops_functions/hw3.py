@@ -160,9 +160,7 @@ def cost_handler(category_name: str, amount: float, income_date: str) -> str:
         financial_transactions_storage.append({})
         return INCORRECT_DATE_MSG
 
-    financial_transactions_storage.append(
-        {CATEGORY: category_name, AMOUNT: amount, DATE: d_m_y}
-    )
+    financial_transactions_storage.append({CATEGORY: category_name, AMOUNT: amount, DATE: d_m_y})
 
     return OP_SUCCESS_MSG
 
@@ -171,9 +169,7 @@ def cost_categories_handler() -> str:
     return categories_info()
 
 
-def output_stats_header(
-    stats_date: str, capital: float, earnings: float, expenses: float
-) -> str:
+def output_stats_header(stats_date: str, capital: float, earnings: float, expenses: float) -> str:
     phrase = "loss"
     difference = expenses - earnings
     if earnings >= expenses:
@@ -321,10 +317,7 @@ def correct_category(category: str) -> bool:
 
 
 def handle_cost(elements: list[str]) -> None:
-    if (
-        len(elements) == CONST_CATEGORY_NUMBER_OF_ARGUMENTS
-        and elements[1] == "categories"
-    ):
+    if len(elements) == CONST_CATEGORY_NUMBER_OF_ARGUMENTS and elements[1] == "categories":
         print(cost_categories_handler())
         return
     if not valid_args_cost(elements):
