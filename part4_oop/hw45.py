@@ -85,24 +85,30 @@ class LFUPolicy(Policy[K]):
     capacity: int = 5
     _order: list[K] = field(default_factory=list, init=False)
     _key_counter: dict[K, int] = field(default_factory=dict, init=False)
+    _key_to_evict: K | None = field(default=None, init=False)
 
     def register_access(self, key: K) -> None:
+        self._key_to_evict = None
+        if key not in self._order and len(self._order) >= self.capacity:
+            self._key_to_evict = min(self._key_counter, key=self._get_key_priority)
+
         if key not in self._order:
             self._order.append(key)
         self._key_counter[key] = self._key_counter.get(key, 0) + 1
 
     def get_key_to_evict(self) -> K | None:
-        if len(self._key_counter) > self.capacity:
-            return min(self._key_counter, key=self._get_key_priority)
-        return None
+        return self._key_to_evict
 
     def remove_key(self, key: K) -> None:
         self._key_counter.pop(key)
         self._order.remove(key)
+        if self._key_to_evict == key:
+            self._key_to_evict = None
 
     def clear(self) -> None:
         self._key_counter.clear()
         self._order.clear()
+        self._key_to_evict = None
 
     @property
     def has_keys(self) -> bool:
