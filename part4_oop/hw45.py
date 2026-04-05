@@ -88,15 +88,11 @@ class LFUPolicy(Policy[K]):
 
     def register_access(self, key: K) -> None:
         if key not in self._order:
-            self._key_counter[key] = INF
             self._order.append(key)
-        elif (self._key_counter[key] == INF):
-            self._key_counter[key] = 2
-        else:
-            self._key_counter[key] += 1
+        self._key_counter[key] = self._key_counter.get(key, 0) + 1
 
     def get_key_to_evict(self) -> K | None:
-        if len(self._key_counter) >= self.capacity:
+        if len(self._key_counter) > self.capacity:
             return min(self._key_counter, key=self._get_key_priority)
         return None
 
