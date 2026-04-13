@@ -1,5 +1,6 @@
 import json
 from datetime import UTC, datetime, timedelta
+from functools import wraps
 from typing import Any, ParamSpec, Protocol, TypeVar
 from urllib.request import urlopen
 
@@ -28,12 +29,12 @@ class BreakerError(Exception):
 
 
 def check_critical_count(critical_count: int, errors: list[Exception]) -> None:
-    if type(critical_count) is not int or critical_count <= 0:
+    if not isinstance(critical_count, int) or critical_count <= 0:
         errors.append(ValueError(INVALID_CRITICAL_COUNT))
 
 
 def check_time_to_recover(time_to_recover: int, errors: list[Exception]) -> None:
-    if type(time_to_recover) is not int or time_to_recover <= 0:
+    if not isinstance(time_to_recover, int) or time_to_recover <= 0:
         errors.append(ValueError(INVALID_RECOVERY_TIME))
 
 
@@ -60,17 +61,8 @@ class CircuitBreaker:
         self._blocked: bool = False
         self._blocked_time: datetime
 
-    def block(self, func: CallableWithMeta[P, R_co]) -> None:
-        if self._blocked:
-            blocked_until = self._blocked_time + timedelta(seconds=self._time_to_recover)
-
-            if blocked_until >= datetime.now(UTC):
-                full_name = f"{func.__module__}.{func.__name__}"
-                raise BreakerError(full_name, self._blocked_time)
-            self._blocked = False
-            self._critical_count = 0
-
     def __call__(self, func: CallableWithMeta[P, R_co]) -> CallableWithMeta[P, R_co]:
+        @wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
             self.block(func)
             try:
@@ -90,6 +82,16 @@ class CircuitBreaker:
             return ans
 
         return wrapper
+
+    def block(self, func: CallableWithMeta[P, R_co]) -> None:
+        if self._blocked:
+            blocked_until = self._blocked_time + timedelta(seconds=self._time_to_recover)
+
+            if blocked_until > datetime.now(UTC):
+                full_name = f"{func.__module__}.{func.__name__}"
+                raise BreakerError(full_name, self._blocked_time)
+            self._blocked = False
+            self._critical_count = 0
 
 
 circuit_breaker = CircuitBreaker(5, 30, Exception)
