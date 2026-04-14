@@ -6,7 +6,7 @@ from part4_oop.interfaces import Cache, HasCache, Policy, Storage
 
 K = TypeVar("K")
 V = TypeVar("V")
-INF = 10**18
+INF = float("inf")
 
 
 @dataclass
@@ -85,30 +85,30 @@ class LFUPolicy(Policy[K]):
     capacity: int = 5
     _order: list[K] = field(default_factory=list, init=False)
     _key_counter: dict[K, int] = field(default_factory=dict, init=False)
-    _get_key_to_evict: K | None = field(default=None, init=False)
+    _key_to_evict: K | None = field(default=None, init=False)
 
     def register_access(self, key: K) -> None:
-        self._get_key_to_evict = None
+        self._key_to_evict = None
         if key not in self._order and len(self._order) >= self.capacity:
-            self._get_key_to_evict = min(self._key_counter, key=self._get_key_priority)
+            self._key_to_evict = min(self._key_counter, key=self._get_key_priority)
 
         if key not in self._order:
             self._order.append(key)
         self._key_counter[key] = self._key_counter.get(key, 0) + 1
 
     def get_key_to_evict(self) -> K | None:
-        return self._get_key_to_evict
+        return self._key_to_evict
 
     def remove_key(self, key: K) -> None:
         self._key_counter.pop(key)
         self._order.remove(key)
-        if self._get_key_to_evict == key:
-            self._get_key_to_evict = None
+        if self._key_to_evict == key:
+            self._key_to_evict = None
 
     def clear(self) -> None:
         self._key_counter.clear()
         self._order.clear()
-        self._get_key_to_evict = None
+        self._key_to_evict = None
 
     @property
     def has_keys(self) -> bool:
@@ -157,7 +157,7 @@ class CachedProperty[V]:
 
     def __get__(self, instance: HasCache[Any, Any] | None, owner: type) -> V | None:
         if instance is None:
-            return None
+            return self  # type: ignore[return-value]
         if instance.cache.exists(self.name):
             return instance.cache.get(self.name)
         value = self.func(instance)
