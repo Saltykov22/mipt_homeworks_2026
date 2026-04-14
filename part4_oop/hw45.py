@@ -96,7 +96,7 @@ class LFUPolicy(Policy[K]):
             self._order.append(key)
         self._key_counter[key] = self._key_counter.get(key, 0) + 1
 
-    def get_key_to_evict(self) -> K | None:
+    def get_key_to_evict(self) -> K | None:  # noqa: WPS615
         return self._key_to_evict
 
     def remove_key(self, key: K) -> None:
