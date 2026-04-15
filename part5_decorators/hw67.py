@@ -22,7 +22,7 @@ class CallableWithMeta(Protocol[P, R_co]):
 
 
 class BreakerError(Exception):
-    def __init__(self, func_name: str, block_time: str):
+    def __init__(self, func_name: str, block_time: datetime):
         self.func_name = func_name
         self.block_time = block_time
         super().__init__("Too much requests, just wait.")
@@ -73,10 +73,9 @@ class CircuitBreaker:
                 if self._number_rejections == self._critical_count:
                     self._blocked = True
                     self._blocked_time = datetime.now(UTC)
-                    time_str = self._blocked_time.strftime("%Y-%m-%d %H:%M:%S")
 
                     full_name = f"{func.__module__}.{func.__name__}"
-                    raise BreakerError(full_name, time_str) from error
+                    raise BreakerError(full_name, self._blocked_time) from error
                 raise
 
             self._number_rejections = 0
@@ -89,10 +88,8 @@ class CircuitBreaker:
             blocked_until = self._blocked_time + timedelta(seconds=self._time_to_recover)
 
             if blocked_until > datetime.now(UTC):
-                time_str = self._blocked_time.strftime("%Y-%m-%d %H:%M:%S")
-
                 full_name = f"{func.__module__}.{func.__name__}"
-                raise BreakerError(full_name, time_str)
+                raise BreakerError(full_name, self._blocked_time)
             self._blocked = False
             self._critical_count = 0
 
