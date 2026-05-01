@@ -28,12 +28,12 @@ class BreakerError(Exception):
         super().__init__("Too much requests, just wait.")
 
 
-def check_critical_count(critical_count: int, errors: list[Exception]) -> None:
+def _check_critical_count(critical_count: int, errors: list[Exception]) -> None:
     if not isinstance(critical_count, int) or critical_count <= 0:
         errors.append(ValueError(INVALID_CRITICAL_COUNT))
 
 
-def check_time_to_recover(time_to_recover: int, errors: list[Exception]) -> None:
+def _check_time_to_recover(time_to_recover: int, errors: list[Exception]) -> None:
     if not isinstance(time_to_recover, int) or time_to_recover <= 0:
         errors.append(ValueError(INVALID_RECOVERY_TIME))
 
@@ -47,8 +47,8 @@ class CircuitBreaker:
     ):
         errors: list[Exception] = []
 
-        check_critical_count(critical_count, errors)
-        check_time_to_recover(time_to_recover, errors)
+        _check_critical_count(critical_count, errors)
+        _check_time_to_recover(time_to_recover, errors)
 
         if errors:
             raise ExceptionGroup(VALIDATIONS_FAILED, errors)
@@ -64,7 +64,7 @@ class CircuitBreaker:
     def __call__(self, func: CallableWithMeta[P, R_co]) -> CallableWithMeta[P, R_co]:
         @wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
-            self.block(func)
+            self._block(func)
             try:
                 ans = func(*args, **kwargs)
             except self._triggers_on as error:
@@ -83,7 +83,7 @@ class CircuitBreaker:
 
         return wrapper
 
-    def block(self, func: CallableWithMeta[P, R_co]) -> None:
+    def _block(self, func: CallableWithMeta[P, R_co]) -> None:
         if self._blocked:
             blocked_until = self._blocked_time + timedelta(seconds=self._time_to_recover)
 
